@@ -1,7 +1,10 @@
 from flask import Flask, render_template  # сперва подключим модуль
 import json
+from flask_wtf import FlaskForm
+from wtforms import StringField
 
 app = Flask(__name__)  # объявим экземпляр фласка
+app.secret_key = "randomstring"
 
 
 teachers_file = 'data/teachers.json'
@@ -24,6 +27,11 @@ weekday_names = \
         "thu": "Четверг",
         "wed": "Среда"
     }
+
+class BookingForm(FlaskForm):
+    student_name = StringField("Ваше имя")
+    student_phone = StringField("Ваш телефон")
+
 
 # Создаем страницы
 
@@ -50,7 +58,7 @@ def render_profiles(teacher_id):
             schedule = teacher['free']
 
 
-    return render_template('profile.html', name=teacher_name, about=teacher_about, rating=teacher_rating,
+    return render_template('profile.html', teacher_id=teacher_id, name=teacher_name, about=teacher_about, rating=teacher_rating,
                            picture=teacher_picture, price=teacher_price, teacher_goals=teacher_goals,
                            main_goals=main_goals, schedule=schedule, weekday_names=weekday_names)
 
@@ -69,11 +77,22 @@ def render_request_done():
 @app.route('/booking/<int:teacher_id>/<week_day>/<time>/')
 def render_booking(teacher_id, week_day, time):
 
-    return
+    form = BookingForm()
 
-@app.route('/booking_done/')
+    for teacher in teachers:
+        if teacher['id'] == teacher_id:
+
+            teacher_name = teacher['name']
+            teacher_picture = teacher['picture']
+            schedule = teacher['free']
+
+    return render_template("booking.html", form=form, teacher_name=teacher_name, teacher_picture=teacher_picture,
+                           schedule=schedule, week_day=week_day, time=time, weekday_names=weekday_names)
+
+
+@app.route('/booking_done/', methods=["POST", "GET"])
 def render_booking_done():
-    return
+    return render_template("booking_done.html")
 
 
 if __name__ == '__main__':
