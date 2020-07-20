@@ -55,6 +55,13 @@ def main():
     return render_template('index.html', goals=goals, icons=goal_icons, teachers=random_teacher)
 
 
+@app.route('/teachers/')
+def render_teachers():
+
+    return render_template('index.html', goals=goals, icons=goal_icons, teachers=teachers)
+
+
+
 @app.route('/profiles/<int:teacher_id>/')
 def render_profiles(teacher_id):
 
@@ -77,7 +84,10 @@ def render_profiles(teacher_id):
 
 @app.route('/goals/<goal>/')
 def render_goals(goal):
-    return
+
+    teachers_list = [teacher for teacher in teachers if goal in teacher['goals']]
+
+    return render_template('goal.html', icons=goal_icons, goal=goal, goals=goals, teachers=teachers_list)
 
 @app.route('/request/')
 def render_request():
