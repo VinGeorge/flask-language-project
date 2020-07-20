@@ -91,11 +91,11 @@ def render_goals(goal):
 
 @app.route('/request/')
 def render_request():
-    return
+    return render_template(("request.html"))
 
 @app.route('/request_done/')
 def render_request_done():
-    return
+    return render_template("request_done.html")
 
 @app.route('/booking/<int:teacher_id>/<week_day>/<time>/')
 def render_booking(teacher_id, week_day, time):
