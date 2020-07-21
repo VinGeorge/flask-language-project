@@ -166,4 +166,4 @@ def render_booking_done():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)  # запустим сервер
+    app.run()
