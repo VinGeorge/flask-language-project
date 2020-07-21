@@ -44,7 +44,7 @@
 
                         {% if status == True %}
 
-                            <a href="/booking/{{ teacher_id }}/{{ day }}/{{ time[:2] }}/" class="btn btn-outline-success mr-2" >{{ time }} свободно</a>
+                            <a href="/booking/{{ teacher_id }}/{{ day }}/{{ time.split(':')[0] }}/" class="btn btn-outline-success mr-2" >{{ time }} свободно</a>
 
                         {% endif %}
 

@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request  # сперва подключим модуль
 import json
 import random
+import phonenumbers
 from flask_wtf import FlaskForm
 from wtforms import StringField, HiddenField, RadioField
 
@@ -77,7 +78,6 @@ def render_teachers():
     return render_template('index.html', goals=goals, icons=goal_icons, teachers=teachers)
 
 
-
 @app.route('/profiles/<int:teacher_id>/')
 def render_profiles(teacher_id):
 
@@ -114,7 +114,7 @@ def render_request():
 @app.route('/request_done/', methods=["POST", "GET"])
 def render_request_done():
 
-    form=RequestForm()
+    form = RequestForm()
 
     if request.method == 'POST':
 
@@ -123,9 +123,10 @@ def render_request_done():
         goal = form.student_goal.data
         time = form.student_avalible_time.data
         name = form.student_name.data
-        phone = form.student_phone.data
+        parsed_phone= phonenumbers.parse(form.student_phone.data, 'RU')
+        formated_phone = phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
 
-    return render_template("request_done.html", form=form, goal=goal, time=time, name=name, phone=phone, goals=goals)
+    return render_template("request_done.html", form=form, goal=goal, time=time, name=name, phone=formated_phone, goals=goals)
 
 @app.route('/booking/<int:teacher_id>/<week_day>/<time>/')
 def render_booking(teacher_id, week_day, time):
@@ -152,10 +153,10 @@ def render_booking_done():
         form = BookingForm()
 
         name = form.student_name.data
-        phone = form.student_phone.data
+        parsed_phone= phonenumbers.parse(form.student_phone.data, 'RU')
+        formated_phone = phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
 
-        return render_template("booking_done.html", form=form, weekday_names=weekday_names, name=name, phone=phone)
-
+        return render_template("booking_done.html", form=form, weekday_names=weekday_names, name=name, phone=formated_phone)
 
 
 if __name__ == '__main__':
