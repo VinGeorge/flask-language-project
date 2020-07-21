@@ -57,7 +57,7 @@ class RequestForm(FlaskForm):
     student_name = StringField("Ваше имя")
     student_phone = StringField("Ваш телефон")
     student_goal = RadioField('Ваша цель', choices=[(key, value) for key, value in goals.items()])
-    student_avalible_time = RadioField('Доступное время', choices=[(key, value) for key, value in request_times.items()])
+    student_available_time = RadioField('Доступное время', choices=[(key, value) for key, value in request_times.items()])
 
 # Создаем страницы
 
@@ -107,7 +107,7 @@ def render_goals(goal):
 @app.route('/request/')
 def render_request():
 
-    form=RequestForm()
+    form = RequestForm()
 
     return render_template("request.html", form=form)
 
@@ -121,12 +121,15 @@ def render_request_done():
         form = RequestForm()
 
         goal = form.student_goal.data
-        time = form.student_avalible_time.data
+        time = form.student_available_time.data
         name = form.student_name.data
-        parsed_phone= phonenumbers.parse(form.student_phone.data, 'RU')
+        parsed_phone = phonenumbers.parse(form.student_phone.data, 'RU')
         formated_phone = phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
 
-    return render_template("request_done.html", form=form, goal=goal, time=time, name=name, phone=formated_phone, goals=goals)
+        with open("requests.json", "w") as f:
+            json.dump([name, formated_phone, time, goal], f)
+
+    return render_template("request_done.html", request_times=request_times, form=form, goal=goal, time=time, name=name, phone=formated_phone, goals=goals)
 
 @app.route('/booking/<int:teacher_id>/<week_day>/<time>/')
 def render_booking(teacher_id, week_day, time):
@@ -153,8 +156,11 @@ def render_booking_done():
         form = BookingForm()
 
         name = form.student_name.data
-        parsed_phone= phonenumbers.parse(form.student_phone.data, 'RU')
+        parsed_phone = phonenumbers.parse(form.student_phone.data, 'RU')
         formated_phone = phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
+
+        with open("data/booking.json", "w") as f:
+            json.dump([name, formated_phone, form.clientWeekday.data, form.clientTime.data], f)
 
         return render_template("booking_done.html", form=form, weekday_names=weekday_names, name=name, phone=formated_phone)
 
