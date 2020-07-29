@@ -131,7 +131,7 @@ class Calendar(db.Model):
 
 class Schedule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    is_avalible = db.Column(db.Integer, nullable=False)
+    is_avalible = db.Column(db.Boolean, nullable=False)
     teachers = db.relationship('Teacher')
     teacher_id = db.Column(db.Integer, db.ForeignKey("teachers.id"))
     calendar = db.relationship('Calendar')
@@ -169,10 +169,6 @@ def import_teachers():
             for time, value in times.items():
                 calendar_params = Calendar.query.filter(db.and_
                                                          (Calendar.name == day, Calendar.time == time)).first()
-                if value:
-                    value=1
-                else:
-                    value=0
 
                 new_reserve = Schedule(is_avalible=value, calendar_id=calendar_params, teacher_id=new_teacher)
                 db.session.add(new_reserve)
@@ -188,10 +184,6 @@ def import_calendar():
             )
             )
     db.session.commit()
-
-
-
-db.create_all()
 
 
 class BookingForm(FlaskForm):
