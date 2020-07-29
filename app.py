@@ -131,7 +131,7 @@ class Calendar(db.Model):
 
 class Schedule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    is_avalible = db.Column(db.Boolean, nullable=False)
+    is_avalible = db.Column(db.Integer, nullable=False)
     teachers = db.relationship('Teacher')
     teacher_id = db.Column(db.Integer, db.ForeignKey("teachers.id"))
     calendar = db.relationship('Calendar')
@@ -165,6 +165,18 @@ def import_teachers():
             new_goal = Goal.query.filter(Goal.name == goal).first()
             new_goal.teachers.append(new_teacher)
 
+        for day, times in teacher['free'].items():
+            for time, value in times.items():
+                calendar_params = Calendar.query.filter(db.and_
+                                                         (Calendar.name == day, Calendar.time == time)).first()
+                if value:
+                    value=1
+                else:
+                    value=0
+
+                new_reserve = Schedule(is_avalible=value, calendar_id=calendar_params, teacher_id=new_teacher)
+                db.session.add(new_reserve)
+
 
 def import_calendar():
     for day, times in teachers[1]['free'].items():
@@ -179,7 +191,7 @@ def import_calendar():
 
 
 
-# db.create_all()
+db.create_all()
 
 
 class BookingForm(FlaskForm):
@@ -305,5 +317,4 @@ if __name__ == '__main__':
     import_calendar()
     import_goals()
     import_teachers()
-    print(1)
     # app.run()
