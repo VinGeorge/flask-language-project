@@ -68,9 +68,11 @@ class Teacher(db.Model):
     rating = db.Column(db.Float)
     price = db.Column(db.Integer, nullable=False)
     picture = db.Column(db.String, nullable=False)
+    schedule = db.relationship('Schedule')
     goals = db.relationship('Goal',
                             secondary=goals_asso,
                             back_populates='teachers')
+
 
 class Goal(db.Model):
     __tablename__ = 'goals'
@@ -122,9 +124,9 @@ class Calendar(db.Model):
     __tablename__ = 'calendar'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=True)
-    users_name = db.Column(db.String, nullable=True)
-    time = db.Column(db.String, nullable=True)
+    name = db.Column(db.String, nullable=False)
+    users_name = db.Column(db.String, nullable=False)
+    time = db.Column(db.String, nullable=False)
     classes = db.relationship('Class')
     schedule = db.relationship('Schedule')
 
@@ -152,6 +154,10 @@ def import_goals():
 
 def import_teachers():
 
+    # with  db.session.no_autoflush:
+
+    # db.session.flush()
+
     for teacher in teachers:
         new_teacher = Teacher(
                 name=teacher['name'],
@@ -167,11 +173,12 @@ def import_teachers():
 
         for day, times in teacher['free'].items():
             for time, value in times.items():
-                calendar_params = Calendar.query.filter(db.and_
-                                                         (Calendar.name == day, Calendar.time == time)).first()
-
+                calendar_params = Calendar.query.filter(db.and_(Calendar.name == day, Calendar.time == time)).first()
                 new_reserve = Schedule(is_avalible=value, calendar_id=calendar_params, teacher_id=new_teacher)
                 db.session.add(new_reserve)
+
+    db.session.commit()
+
 
 
 def import_calendar():
