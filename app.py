@@ -227,7 +227,6 @@ class RequestForm(FlaskForm):
 @app.route('/')
 def main():
 
-
     goals = [goal for goal in Goal.query.all()]
     teachers_id = [teacher.id for teacher in Teacher.query.distinct()]
     random_id_list = random.choices(teachers_id, k=6)
@@ -248,19 +247,21 @@ def render_teachers():
 @app.route('/profiles/<int:teacher_id>/')
 def render_profiles(teacher_id):
 
-    teacher = Teacher.query.join(goals_asso).join(Goal)\
-        .filter(Teacher.id == teacher_id).first_or_404()
+    teacher_info = Teacher.query.filter(Teacher.id == teacher_id).first_or_404()
+    teacher_goals =  db.session.query(Goal.users_name, Goal.name).select_from(Teacher)\
+        .join(goals_asso).join(Goal).filter(Teacher.id==teacher_id).all()
+
+    teacher_avalible_times = db.session.query(Calendar.name, Calendar.users_name, Calendar.time).select_from(Teacher)\
+        .join(Schedule).join(Calendar).filter(db.and_(Teacher.id==teacher_id, Schedule.is_avalible==True)).all()
+
+    teacher_avalible_days = set([day.users_name for day in teacher_avalible_times])
+
+    weekdays = Calendar.query.with_entities(Calendar.name, Calendar.users_name).distinct()
 
 
-    # schedule = teacher['free']
+    return render_template('profile.html', teacher=teacher_info, teacher_goals=teacher_goals,
+                           teacher_shedule=teacher_avalible_times, avalible_days=teacher_avalible_days, weekdays=weekdays)
 
-
-    return render_template('profile.html', teacher=teacher)
-
-    #
-    # return render_template('profile.html', teacher_id=teacher_id, name=teacher_name, about=teacher_about, rating=teacher_rating,
-    #                        picture=teacher_picture, price=teacher_price, teacher_goals=teacher_goals,
-    #                        main_goals=goals, schedule=schedule, weekday_names=weekday_names)
 
 @app.route('/goals/<goal>/')
 def render_goals(goal):
@@ -291,7 +292,7 @@ def render_request_done():
         form = RequestForm()
 
         request_goal = form.student_goal.data
-        student_avalible_time = form.student_available_time.data.label(?)
+        # student_avalible_time = form.student_available_time.data.label(?)
         student_name = form.student_name.data
         parsed_phone = phonenumbers.parse(form.student_phone.data, 'RU')
         formated_phone = phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
@@ -311,16 +312,10 @@ def render_booking(teacher_id, week_day, time):
 
     form = BookingForm(clientWeekday=week_day, clientTeacher=teacher_id, clientTime=time)
 
-    for teacher in teachers:
-        if teacher['id'] == teacher_id:
-
-            teacher_name = teacher['name']
-            teacher_picture = teacher['picture']
-            schedule = teacher['free']
+    teacher_info = Teacher.query.join(Schedule).join(Calendar).filter(Teacher.id == teacher_id).first_or_404()
 
 
-    return render_template("booking.html", form=form, teacher_name=teacher_name, teacher_picture=teacher_picture,
-                           schedule=schedule, week_day=week_day, time=time, weekday_names=weekday_names)
+    return render_template("booking.html", form=form, teacher=teacher_info)
 
 
 @app.route('/booking_done/', methods=["POST", "GET"])
@@ -330,9 +325,16 @@ def render_booking_done():
 
         form = BookingForm()
 
-        name = form.student_name.data
+        booking_student_name = form.student_name.data
         parsed_phone = phonenumbers.parse(form.student_phone.data, 'RU')
         formated_phone = phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
+
+        booking_info = Teacher.query.join(Schedule).join(Calendar).filter(db.and_(Teacher.name == form.clientTeacher.data,
+                                                                                Calendar.users_name == form.clientWeekday,
+                                                                                Calendar.time == form.clientTime)).first()
+
+        new_booking_student = Student(name=booking_student_name, phone=formated_phone)
+
 
         with open("data/booking.json", "w") as f:
             json.dump([name, formated_phone, form.clientWeekday.data, form.clientTime.data], f)
@@ -342,14 +344,9 @@ def render_booking_done():
 
 if __name__ == '__main__':
 
-    teacher = Teacher.query.join(goals_asso).join(Goal)\
-        .filter(Teacher.id == 3).statement
-
-    print(teacher)
-
     # request_frequency()
     # import_calendar()
     # import_goals()
     # import_teachers()
-    # app.run(debug=True)
+    app.run(debug=True)
 

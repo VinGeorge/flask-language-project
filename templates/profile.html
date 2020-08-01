@@ -14,16 +14,16 @@
               <p>
                 {% for goal in teacher_goals %}
 
-                <a href=/goals/{{ goal }}/>
-                  <span class="badge badge-secondary mr-2">{{ main_goals[goal] }} </span>
+                <a href=/goals/{{ goal[1] }}/>
+                  <span class="badge badge-secondary mr-2">{{ goal[0] }} </span>
                 </a>
 
                 {% endfor %}
 
-                Рейтинг: {{ rating }} Ставка: {{ price }} / час
+                Рейтинг: {{ teacher.rating }} Ставка: {{ teacher.price }} / час
 
               </p>
-              <p>{{ about }}</p>
+              <p>{{ teacher.about }}</p>
 
             </section>
 
@@ -31,27 +31,20 @@
 
               <h4 class="mb-4 mt-5">Записаться на пробный урок</h4>
 
+                {% for weekday in weekdays %}
 
-                {% for day, times in schedule.items() %}
-
-                    <h6 class="mt-4">{{ weekday_names[day] }}</h6>
-
-                    {% if True not in times.values() %}
-                    <p>Нет свободного времени</p>
+                    <h6 class="mt-4">{{ weekday.users_name }}</h6>
+                    {% if weekday.users_name not in avalible_days %}
+                        <p>Нет свободного времени</p>
                     {% endif %}
 
-                    {% for time, status in times.items() %}
-
-                        {% if status == True %}
-
-                            <a href="/booking/{{ teacher_id }}/{{ day }}/{{ time.split(':')[0] }}/" class="btn btn-outline-success mr-2" >{{ time }} свободно</a>
-
+                    {% for day in teacher_shedule %}
+                        {% if day.users_name == weekday.users_name %}
+                        <a href="/booking/{{ teacher.id }}/{{ weekday.name }}/{{ day.time.split(':')[0] }}/" class="btn btn-outline-success mr-2" >{{ day.time }} свободно</a>
                         {% endif %}
-
                     {% endfor %}
 
                 {% endfor %}
-
 
             </section>
 
