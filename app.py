@@ -220,7 +220,7 @@ class RequestForm(FlaskForm):
     student_phone = StringField("Ваш телефон")
 
     student_goal = RadioField('Ваша цель', choices=[(goal.name, goal.users_name) for goal in Goal.query.all()])
-    student_available_time = RadioField('Доступное время', choices=[(item.id, item.frequency) for item in Request.query.distinct()])
+    student_available_time = RadioField('Доступное время', choices=[(item.frequency, item.frequency) for item in Request.query.distinct()])
 
 # Создаем страницы
 
@@ -274,7 +274,7 @@ def render_goals(goal):
         page_goal = Goal.query.filter(Goal.name == goal).first()
         return render_template('goal.html', goal=page_goal, teachers=teachers)
     else:
-        print('Нет такой цели')
+        return 'Нет такой цели'
 
 
 @app.route('/request/')
@@ -294,19 +294,24 @@ def render_request_done():
         form = RequestForm()
 
         request_goal = form.student_goal.data
-        # student_avalible_time = form.student_available_time.data.label(?)
+        student_request_time = form.student_available_time.data
         student_name = form.student_name.data
         parsed_phone = phonenumbers.parse(form.student_phone.data, 'RU')
         formated_phone = phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
 
-        new_request_student = Student(name=student_name, phone=formated_phone)
-        db.session.add()
+        new_request_student = Student(name=student_name,
+                                      phone=formated_phone)
+        db.session.add(new_request_student)
         new_request_qoal = Goal.query.filter(Goal.name == request_goal).first()
-        Request(frequency=student_avalible_time, student_id=new_request_student, goal_id=new_request_qoal)
-        db.session.add()
+        db.session.add(Request(
+            frequency=student_request_time,
+            students=new_request_student,
+            goals=new_request_qoal
+        )
+        )
         db.session.commit()
 
-    return render_template("request_done.html", form=form, request_times=avalible_time,
+    return render_template("request_done.html", form=form, request_times=student_request_time,
                            student_name=student_name, student_phone=formated_phone, request_goal=new_request_qoal)
 
 @app.route('/booking/<int:teacher_id>/<week_day>/<time>/')
