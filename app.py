@@ -52,11 +52,6 @@ request_times = \
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///language.db'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = flask_sqlalchemy.SQLAlchemy(app)
-
-# app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///language.db'
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = flask_sqlalchemy.SQLAlchemy(app)
 migrate = flask_migrate.Migrate(app, db)
 
 goals_asso = db.Table('goals_asso',
@@ -107,7 +102,7 @@ class Student(db.Model):
     __tablename__ = 'students'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False, unique=True)
+    name = db.Column(db.String, nullable=False)
     phone = db.Column(db.String, nullable=False)
     requests = db.relationship('Request')
     classes = db.relationship('Class')
@@ -314,15 +309,16 @@ def render_request_done():
     return render_template("request_done.html", form=form, request_times=student_request_time,
                            student_name=student_name, student_phone=formated_phone, request_goal=new_request_qoal)
 
+
 @app.route('/booking/<int:teacher_id>/<week_day>/<time>/')
 def render_booking(teacher_id, week_day, time):
 
     form = BookingForm(clientWeekday=week_day, clientTeacher=teacher_id, clientTime=time)
+    teacher_info = Teacher.query.filter(Teacher.id == teacher_id).first()
+    weekday = Calendar.query.filter(Calendar.name == week_day).first()
 
-    teacher_info = Teacher.query.join(Schedule).join(Calendar).filter(Teacher.id == teacher_id).first_or_404()
 
-
-    return render_template("booking.html", form=form, teacher=teacher_info)
+    return render_template("booking.html", form=form, time=time, teacher=teacher_info, weekday=weekday.users_name)
 
 
 @app.route('/booking_done/', methods=["POST", "GET"])
@@ -336,24 +332,30 @@ def render_booking_done():
         parsed_phone = phonenumbers.parse(form.student_phone.data, 'RU')
         formated_phone = phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
 
-        booking_info = Teacher.query.join(Schedule).join(Calendar).filter(db.and_(Teacher.name == form.clientTeacher.data,
-                                                                                Calendar.users_name == form.clientWeekday,
-                                                                                Calendar.time == form.clientTime)).first()
+        booking_new_student = Student(name=booking_student_name, phone=formated_phone)
+        db.session.add(booking_new_student)
+        booking_teacher=Teacher.query.filter(Teacher.id == form.clientTeacher.data).first()
+        booking_time=Calendar.query.filter(db.and_(Calendar.name == form.clientWeekday.data,
+                                                   Calendar.time == form.clientTime.data + ':00')).first()
+        db.session.add(Class(
+            calendar=booking_time,
+            teachers=booking_teacher,
+            students=booking_new_student
+        ))
 
-        new_booking_student = Student(name=booking_student_name, phone=formated_phone)
+        schedule_id_for_change= db.session.query(Schedule.id).select_from(Teacher).join(Schedule).join(Calendar)\
+            .filter(db.and_(Teacher.id == form.clientTeacher.data,
+                              Calendar.name == form.clientWeekday.data,
+                              Calendar.time == form.clientTime.data + ':00')).first()[0]
 
+        Schedule.query.filter_by(id = schedule_id_for_change).update({'is_avalible': False})
 
-        with open("data/booking.json", "w") as f:
-            json.dump([name, formated_phone, form.clientWeekday.data, form.clientTime.data], f)
+        db.session.commit()
 
-        return render_template("booking_done.html", form=form, weekday_names=weekday_names, name=name, phone=formated_phone)
-
+        return render_template("booking_done.html", form=form, booking_time=booking_time,
+                               name=form.clientTeacher.data, phone=formated_phone)
 
 if __name__ == '__main__':
 
-    # request_frequency()
-    # import_calendar()
-    # import_goals()
-    # import_teachers()
-    app.run(debug=True)
+    app.run()
 
