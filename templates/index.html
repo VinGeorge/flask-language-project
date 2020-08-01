@@ -12,9 +12,9 @@
     <div class="text-center mb-5">
       <div class="btn-group mx-auto mb-0" role="group" aria-label="Basic example">
 
-          {% for key, value in goals.items() %}
+          {% for goal in goals %}
 
-            <a href=/goals/{{ key }}/ class="btn btn-outline-secondary">{{ icons[key] }} {{ value }}</a>
+            <a href=/goals/{{ goal.name }}/ class="btn btn-outline-secondary">{{ goal.picture }} {{ goal.users_name }}</a>
 
             {% endfor %}
 
@@ -34,15 +34,15 @@
               <div class="row">
                 <div class="col-3">
 
-                    <a href=/profiles/{{ teacher['id'] }}/>
-                      <img src={{ teacher['picture'] }} class="img-fluid" alt="">
+                    <a href=/profiles/{{ teacher.id }}/>
+                      <img src={{ teacher.picture }} class="img-fluid" alt="">
                     </a>
 
                 </div>
                 <div class="col-9">
-                  <p class="float-right">Рейтинг: {{ teacher['rating'] }} Ставка: {{ teacher['price'] }} / час</p>
-                  <h2 class="h4">{{ teacher['name'] }}</h2>
-                  <p>{{ teacher['about'] | truncate(200, True)  }}</p>
+                  <p class="float-right">Рейтинг: {{ teacher.rating }} Ставка: {{ teacher.price }} / час</p>
+                  <h2 class="h4">{{ teacher.name }}</h2>
+                  <p>{{ teacher.about | truncate(200, True)  }}</p>
                   <a href=/profiles/1/ class="btn btn-outline-primary btn-sm mr-3 mb-2">Показать информацию и
                     расписание</a>
                 </div>

@@ -6,7 +6,6 @@ import phonenumbers
 from flask_wtf import FlaskForm
 from wtforms import StringField, HiddenField, RadioField
 import flask_sqlalchemy
-from flask import Flask
 import flask_migrate
 
 
@@ -200,6 +199,15 @@ def import_calendar():
     db.session.commit()
 
 
+def request_frequency():
+
+    for value in request_times.values():
+        db.session.add(Request(
+            frequency=value
+        )
+        )
+    db.session.commit()
+
 class BookingForm(FlaskForm):
     student_name = StringField("Ваше имя")
     student_phone = StringField("Ваш телефон")
@@ -210,53 +218,61 @@ class BookingForm(FlaskForm):
 class RequestForm(FlaskForm):
     student_name = StringField("Ваше имя")
     student_phone = StringField("Ваш телефон")
-    student_goal = RadioField('Ваша цель', choices=[(key, value) for key, value in goals.items()])
-    student_available_time = RadioField('Доступное время', choices=[(key, value) for key, value in request_times.items()])
+
+    student_goal = RadioField('Ваша цель', choices=[(goal.name, goal.users_name) for goal in Goal.query.all()])
+    student_available_time = RadioField('Доступное время', choices=[(item.id, item.frequency) for item in Request.query.distinct()])
 
 # Создаем страницы
 
 @app.route('/')
 def main():
 
-    teachers_id = [teacher['id'] for teacher in teachers]
+
+    goals = [goal for goal in Goal.query.all()]
+    teachers_id = [teacher.id for teacher in Teacher.query.distinct()]
     random_id_list = random.choices(teachers_id, k=6)
+    random_teachers = [teacher for teacher in Teacher.query.filter(Teacher.id.in_(random_id_list)).all()]
 
-    random_teacher = [teacher for teacher in teachers if teacher['id'] in random_id_list]
-
-    return render_template('index.html', goals=goals, icons=goal_icons, teachers=random_teacher)
+    return render_template('index.html', goals=goals, teachers=random_teachers)
 
 
 @app.route('/teachers/')
 def render_teachers():
 
-    return render_template('index.html', goals=goals, icons=goal_icons, teachers=teachers)
+    goals = [goal for goal in Goal.query.all()]
+    all_teachers = [teacher for teacher in Teacher.query.all()]
+
+    return render_template('index.html', goals=goals, teachers=all_teachers)
 
 
 @app.route('/profiles/<int:teacher_id>/')
 def render_profiles(teacher_id):
 
-    for teacher in teachers:
-        if teacher['id'] == teacher_id:
-
-            teacher_name = teacher['name']
-            teacher_about = teacher['about']
-            teacher_rating = teacher['rating']
-            teacher_picture = teacher['picture']
-            teacher_price = teacher['price']
-            teacher_goals = teacher['goals']
-            schedule = teacher['free']
+    teacher = Teacher.query.join(goals_asso).join(Goal)\
+        .filter(Teacher.id == teacher_id).first_or_404()
 
 
-    return render_template('profile.html', teacher_id=teacher_id, name=teacher_name, about=teacher_about, rating=teacher_rating,
-                           picture=teacher_picture, price=teacher_price, teacher_goals=teacher_goals,
-                           main_goals=goals, schedule=schedule, weekday_names=weekday_names)
+    # schedule = teacher['free']
+
+
+    return render_template('profile.html', teacher=teacher)
+
+    #
+    # return render_template('profile.html', teacher_id=teacher_id, name=teacher_name, about=teacher_about, rating=teacher_rating,
+    #                        picture=teacher_picture, price=teacher_price, teacher_goals=teacher_goals,
+    #                        main_goals=goals, schedule=schedule, weekday_names=weekday_names)
 
 @app.route('/goals/<goal>/')
 def render_goals(goal):
 
-    teachers_list = [teacher for teacher in teachers if goal in teacher['goals']]
+    goals = [goal.name for goal in Goal.guery.all()]
 
-    return render_template('goal.html', icons=goal_icons, goal=goal, goals=goals, teachers=teachers_list)
+    if goal in goals:
+        teachers = [teacher for teacher in Teacher.query.join(goals_asso).join(Goal).filter(Goal.name == goal).all()]
+        return render_template('goal.html', icons=goal_icons, goal=goal, goals=goals, teachers=teachers)
+    else:
+        print('Нет такой цели')
+
 
 @app.route('/request/')
 def render_request():
@@ -274,16 +290,21 @@ def render_request_done():
 
         form = RequestForm()
 
-        goal = form.student_goal.data
-        time = form.student_available_time.data
-        name = form.student_name.data
+        request_goal = form.student_goal.data
+        student_avalible_time = form.student_available_time.data.label(?)
+        student_name = form.student_name.data
         parsed_phone = phonenumbers.parse(form.student_phone.data, 'RU')
         formated_phone = phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
 
-        with open("requests.json", "w") as f:
-            json.dump([name, formated_phone, time, goal], f)
+        new_request_student = Student(name=student_name, phone=formated_phone)
+        db.session.add()
+        new_request_qoal = Goal.query.filter(Goal.name == request_goal).first()
+        Request(frequency=student_avalible_time, student_id=new_request_student, goal_id=new_request_qoal)
+        db.session.add()
+        db.session.commit()
 
-    return render_template("request_done.html", request_times=request_times, form=form, goal=goal, time=time, name=name, phone=formated_phone, goals=goals)
+    return render_template("request_done.html", form=form, request_times=avalible_time,
+                           student_name=student_name, student_phone=formated_phone, request_goal=new_request_qoal)
 
 @app.route('/booking/<int:teacher_id>/<week_day>/<time>/')
 def render_booking(teacher_id, week_day, time):
@@ -320,7 +341,15 @@ def render_booking_done():
 
 
 if __name__ == '__main__':
-    import_calendar()
-    import_goals()
-    import_teachers()
-    # app.run()
+
+    teacher = Teacher.query.join(goals_asso).join(Goal)\
+        .filter(Teacher.id == 3).statement
+
+    print(teacher)
+
+    # request_frequency()
+    # import_calendar()
+    # import_goals()
+    # import_teachers()
+    # app.run(debug=True)
+
