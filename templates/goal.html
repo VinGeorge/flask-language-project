@@ -3,7 +3,7 @@
 {% block container %}
 
   <main class="container mt-3">
-    <h1 class="h1 text-center w-50 mx-auto mt-1 py-5 mb-4"><strong>{{ icons[goal] }}<br />Преподаватели <br>  {{ goals[goal]|lower }}</strong></h1>
+    <h1 class="h1 text-center w-50 mx-auto mt-1 py-5 mb-4"><strong>{{ goal.picture }}<br />Преподаватели <br>  {{ goal.users_name|lower }}</strong></h1>
 
       <div class="row">
       <div class="col-12 col-lg-10 offset-lg-1 m-auto">
@@ -16,15 +16,15 @@
               <div class="row">
                 <div class="col-3">
 
-                    <a href=/profiles/{{ teacher['id'] }}/>
-                      <img src={{ teacher['picture'] }} class="img-fluid" alt="">
+                    <a href=/profiles/{{ teacher.id }}/>
+                      <img src={{ teacher.picture }} class="img-fluid" alt="">
                     </a>
 
                 </div>
                 <div class="col-9">
-                  <p class="float-right">Рейтинг: {{ teacher['rating'] }} Ставка: {{ teacher['price'] }} / час</p>
-                  <h2 class="h4">{{ teacher['name'] }}</h2>
-                  <p>{{ teacher['about'] | truncate(200, True)  }}</p>
+                  <p class="float-right">Рейтинг: {{ teacher.rating }} Ставка: {{ teacher.price }} / час</p>
+                  <h2 class="h4">{{ teacher.name }}</h2>
+                  <p>{{ teacher.about | truncate(200, True)  }}</p>
                   <a href=/profiles/1/ class="btn btn-outline-primary btn-sm mr-3 mb-2">Показать информацию и
                     расписание</a>
                 </div>

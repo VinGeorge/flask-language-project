@@ -248,6 +248,7 @@ def render_teachers():
 def render_profiles(teacher_id):
 
     teacher_info = Teacher.query.filter(Teacher.id == teacher_id).first_or_404()
+
     teacher_goals =  db.session.query(Goal.users_name, Goal.name).select_from(Teacher)\
         .join(goals_asso).join(Goal).filter(Teacher.id==teacher_id).all()
 
@@ -266,11 +267,12 @@ def render_profiles(teacher_id):
 @app.route('/goals/<goal>/')
 def render_goals(goal):
 
-    goals = [goal.name for goal in Goal.guery.all()]
+    goals = [goal.name for goal in Goal.query.with_entities(Goal.name).distinct()]
 
     if goal in goals:
         teachers = [teacher for teacher in Teacher.query.join(goals_asso).join(Goal).filter(Goal.name == goal).all()]
-        return render_template('goal.html', icons=goal_icons, goal=goal, goals=goals, teachers=teachers)
+        page_goal = Goal.query.filter(Goal.name == goal).first()
+        return render_template('goal.html', goal=page_goal, teachers=teachers)
     else:
         print('Нет такой цели')
 
